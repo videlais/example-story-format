@@ -6,3 +6,8 @@ See the blog series [Creating your own Twine 2 Story Format](https://videlais.co
 ## Building
 
 `node index.js` will build a "format.js" file in the `dist` folder. This can then be loaded in Twine 2 or used with Twee tools.
+
+## Loading in Twine 2
+
+In Twine 2, click on Story Formats. Go to the 'Add a New Format' tab. Copy and paste the following URL and then click '+Add':
+`https://videlais.github.io/example-story-format/dist/format.js`
