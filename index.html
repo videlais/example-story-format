@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<title>{{STORY_NAME}}</title>
+	</head>
+	<body>
+		{{STORY_DATA}}
+		<script>
+      (function(window){
+
+              // Add an 'example' global property
+              window.example = {};
+
+              // Extend the window.example with a parse()
+              // Parse the text
+              // - Change any &lt; to <
+              // - Change any &gt; to >
+              // - Run any <script>
+              // - Include any passages using <include>
+              // - Convert string emphasis
+              // - Convert emphasis
+              // - Create hyperlinks (and add event listeners)
+              window.example.parse = function parse(result) {
+
+                  // Look for &lt;
+                  // If found, convert into '<'
+                  result = result.replace(/&lt;/g, function (match, target) {
+
+                      return "<";
+
+                  });
+
+                  // Look for &gt;
+                  // If found, convert into '>'
+                  result = result.replace(/&gt;/g, function (match, target) {
+
+                      return ">";
+
+                  });
+
+                  // Using innerHTML will not run any SCRIPT tags.
+                  // Look for SCRIPT tags
+                  // If found, run eval(text)
+                  result = result.replace(/<script>((?:.|\n)*?)<\/script>/g, function(match, target) {
+                      // Run the code
+                      eval(target);
+                      // Return an empty string
+                      return "";
+                  });
+
+                  // Look for <include> elements
+                  // If found, find the passage, parse it, and return its contents
+                  result = result.replace(/<include>(.*?)<\/include>/g, function(match, target) {
+
+                      // Look for the passage by its name
+                      let passage = example.findPassageByName(target);
+
+                      // Save a result
+                      let result = "";
+
+                      // Was it found?
+                      if(passage !== null) {
+                          // If so, parse it and save the result
+                          result = example.parse(passage.innerHTML)
+
+                      }
+
+                      // Return result.
+                      // It will either be an empty string or the parsed content.
+                      return result;
+                  });
+
+
+                  // Look for any text in the pattern of __text__.
+                  // If found, replace with <em>text</em>
+                  result = result.replace(/\_\_(.*?)\_\_/g, function (match, target) {
+
+                      return `<em>${target}</em>`;
+
+                  });
+
+                  // Look for any text in the pattern of **text**.
+                  // If found, replace with <strong>text</strong>
+                  result = result.replace(/\*\*(.*?)\*\*/g, function (match, target) {
+
+                      return `<strong>${target}</strong>`;
+
+                  });
+
+                  /* Classic [[links]]  */
+                  result = result.replace(/\[\[(.*?)\]\]/g, function (match, target) {
+                      var display = target;
+
+                      /* display|target format */
+                      var barIndex = target.indexOf('|');
+
+                      if (barIndex !== -1) {
+
+                          display = target.substr(0, barIndex);
+                          target = target.substr(barIndex + 1);
+
+                      } else {
+                          /* display->target format */
+                          var rightArrIndex = target.indexOf('->');
+
+                          if (rightArrIndex !== -1) {
+
+                              display = target.substr(0, rightArrIndex);
+                              target = target.substr(rightArrIndex + 2);
+
+                          } else {
+
+                              /* target<-display format */
+                              var leftArrIndex = target.indexOf('<-');
+
+                              if (leftArrIndex !== -1) {
+                                  display = target.substr(leftArrIndex + 2);
+                                  target = target.substr(0, leftArrIndex);
+                              }
+                          }
+                      }
+
+                      return '<a href="javascript:void(0)" data-passage="' +
+                             target + '">' + display + '</a>';
+
+                  });
+
+                  return result;
+
+              }
+
+              window.example.findPassageByPid = function findPassageByPid(pid) {
+                  // Find the element by its 'pid'
+                  return document.querySelector(`[pid="${pid}"]`);
+              }
+
+              window.example.findPassageByName = function findPassageByName(name) {
+                  // Find the element by its 'name'
+                  return document.querySelector(`[name="${name}"]`);
+              }
+
+              window.example.showPassage = function showPassage(passagedata) {
+
+                  // Look for the 'tw-passage'
+                  let passage = document.querySelector('tw-passage');
+
+                  // If it is null, it does not exist yet
+                  if(passage === null) {
+                      // Create it
+                      passage = document.createElement('tw-passage');
+                  }
+
+                  // Save the passage contents
+                  let passageContents = passagedata.innerHTML;
+
+                  // Parse contents
+                  passageContents = example.parse(passageContents);
+
+                  // Set the 'innerHTML' to parsed text
+                  passage.innerHTML = passageContents;
+
+                  // Find all links in the current passage
+                  let links = passage.querySelectorAll('a[data-passage]');
+
+                  // For each link, add an event listener
+                  for(let link of links) {
+                      // If a link is clicked...
+                      link.addEventListener('click', function() {
+                          // Get the name of the passage to load.
+                          let passagename = this.attributes["data-passage"].value;
+                          // Find the passage by its name
+                          let passagedata = example.findPassageByName(passagename);
+                          // Show the passage
+                          example.showPassage(passagedata);
+                      });
+                  }
+
+                  // Append the child element to the HTML <body>
+                  // (If it already exists, it will not be appended.)
+                  document.body.appendChild(passage);
+
+              }
+
+              // Find the 'tw-storydata' element.
+              let storydata = document.querySelector('tw-storydata');
+
+              // Get the 'startnode' attribute. Save its 'value'.
+              let startnode = storydata.attributes['startnode'].value;
+
+              // Find the element with a 'pid' of the startnode
+              let passagedata = window.example.findPassageByPid(startnode);
+
+              // Show the passage matching the startnode
+              example.showPassage(passagedata);
+
+          }(window))
+		</script>
+	</body>
+</html>
